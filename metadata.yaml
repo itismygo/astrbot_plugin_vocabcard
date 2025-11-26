@@ -1,5 +1,5 @@
 name: vocabcard
 desc: 每日英语单词卡片推送插件 - 玻璃拟态风格，支持 AI 动态背景
 version: v1.0.0
-author: Assistant
-repo:
+author: itismygo
+repo: https://github.com/itismygo/astrbot_plugin_vocabcard
