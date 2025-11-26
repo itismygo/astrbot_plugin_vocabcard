@@ -143,7 +143,7 @@ class VocabCardPlugin(Star):
         logger.info("单词卡片定时任务已启动")
 
     async def _schedule_loop(self):
-        """定时任务主循环"""
+        """定时任务主循环 - 智能睡眠，精准触发"""
         while True:
             try:
                 now = datetime.datetime.now()
@@ -158,23 +158,46 @@ class VocabCardPlugin(Star):
                     self._today_generated = False
                     self._last_check_date = today_str
 
-                # 7:30 生成图片
+                # 计算下一个目标时间
+                next_target = self._calculate_next_target_time(now, gen_time, push_time)
+
+                if next_target:
+                    sleep_seconds = (next_target - now).total_seconds()
+
+                    # 如果距离目标时间超过 60 秒，先睡到提前 30 秒
+                    if sleep_seconds > 60:
+                        sleep_until = sleep_seconds - 30
+                        logger.debug(f"距离下次任务还有 {sleep_seconds:.0f} 秒，先睡眠 {sleep_until:.0f} 秒")
+                        await asyncio.sleep(sleep_until)
+                        continue
+
+                    # 距离目标时间很近了，精确等待
+                    if sleep_seconds > 0:
+                        logger.debug(f"即将执行任务，精确等待 {sleep_seconds:.1f} 秒")
+                        await asyncio.sleep(sleep_seconds)
+
+                # 重新获取当前时间（睡眠后）
+                now = datetime.datetime.now()
+
+                # 执行生成任务
                 if now.hour == gen_time[0] and now.minute == gen_time[1]:
                     if not self._today_generated:
                         logger.info("开始生成每日单词卡片...")
                         await self._generate_daily_card()
                         self._today_generated = True
 
-                # 8:00 推送图片
+                # 执行推送任务
                 if now.hour == push_time[0] and now.minute == push_time[1]:
                     if self._cached_image_path and os.path.exists(self._cached_image_path):
                         logger.info("开始推送每日单词卡片...")
                         await self._push_daily_card()
 
+                # 执行完任务后等待 10 秒，避免重复触发
+                await asyncio.sleep(10)
+
             except Exception as e:
                 logger.error(f"定时任务出错: {e}")
-
-            await asyncio.sleep(60)  # 每分钟检查一次
+                await asyncio.sleep(60)  # 出错后等待 60 秒重试
 
     def _parse_time(self, time_str: str) -> tuple:
         """解析时间字符串 HH:MM"""
@@ -183,6 +206,34 @@ class VocabCardPlugin(Star):
             return (int(parts[0]), int(parts[1]))
         except:
             return (8, 0)  # 默认 8:00
+
+    def _calculate_next_target_time(self, now: datetime.datetime, gen_time: tuple, push_time: tuple) -> Optional[datetime.datetime]:
+        """计算下一个目标时间点（生成时间或推送时间中最近的一个）"""
+        today = now.date()
+
+        # 构建今天的生成时间和推送时间
+        gen_datetime = datetime.datetime.combine(today, datetime.time(gen_time[0], gen_time[1]))
+        push_datetime = datetime.datetime.combine(today, datetime.time(push_time[0], push_time[1]))
+
+        # 找出所有未来的目标时间
+        targets = []
+
+        # 如果还没生成过，且生成时间未到
+        if not self._today_generated and gen_datetime > now:
+            targets.append(gen_datetime)
+
+        # 如果推送时间未到
+        if push_datetime > now:
+            targets.append(push_datetime)
+
+        # 如果今天的任务都完成了，计算明天的第一个任务（生成时间）
+        if not targets:
+            tomorrow = today + datetime.timedelta(days=1)
+            next_gen = datetime.datetime.combine(tomorrow, datetime.time(gen_time[0], gen_time[1]))
+            targets.append(next_gen)
+
+        # 返回最近的目标时间
+        return min(targets) if targets else None
 
     def _select_word(self) -> Optional[Dict]:
         """选择一个未推送过的单词"""
