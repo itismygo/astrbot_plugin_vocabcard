@@ -1,5 +1,5 @@
 name: vocabcard
-desc: 每日英语单词卡片推送插件 - 玻璃拟态风格，支持 AI 动态背景
+desc: 每日定时推送玻璃拟态风格的英语单词卡片，内置3722+个CET-6词汇，支持进度追踪和随机学习
 version: v1.0.0
 author: itismygo
 repo: https://github.com/itismygo/astrbot_plugin_vocabcard
