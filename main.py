@@ -16,6 +16,7 @@ import datetime
 import json
 import os
 import random
+import traceback
 import urllib.parse
 from pathlib import Path
 from typing import Optional, Dict, List
@@ -531,30 +532,102 @@ class VocabCardPlugin(Star):
         yield event.plain_result("已取消注册 👋")
 
     @filter.command("vocab_test")
-    async def cmd_test_push(self, event: AstrMessageEvent):
-        """测试推送功能（立即生成并推送一张卡片）"""
-        try:
-            # 生成卡片（静默）
-            word = self._select_word()
-            if not word:
-                yield event.plain_result("没有可用的单词")
-                return
+    async def cmd_test_push(self, event: AstrMessageEvent, delay_seconds: str = "0"):
+        """
+        测试推送功能
 
-            image_path = await self._generate_card_image(word)
+        用法：
+        - /vocab_test          # 立即生成并发送到当前会话（快速测试）
+        - /vocab_test 60       # 60秒后执行完整定时推送流程（完整测试）
+        """
+        # 参数解析
+        delay = int(delay_seconds) if delay_seconds.isdigit() else 0
 
-            # 发送到当前会话
-            yield event.plain_result(f"📚 测试单词: {word['word']}")
-            yield event.image_result(image_path)
-
-            # 清理
+        # 快速测试模式（delay=0）
+        if delay == 0:
             try:
-                os.remove(image_path)
-            except:
-                pass
+                # 生成卡片（静默）
+                word = self._select_word()
+                if not word:
+                    yield event.plain_result("没有可用的单词")
+                    return
 
-        except Exception as e:
-            logger.error(f"测试推送失败: {e}")
-            yield event.plain_result(f"❌ 测试失败: {e}")
+                image_path = await self._generate_card_image(word)
+
+                # 发送到当前会话
+                yield event.plain_result(f"📚 测试单词: {word['word']}")
+                yield event.image_result(image_path)
+
+                # 清理
+                try:
+                    os.remove(image_path)
+                except:
+                    pass
+
+            except Exception as e:
+                logger.error(f"测试推送失败: {e}")
+                yield event.plain_result(f"❌ 测试失败: {e}")
+
+        # 完整定时测试模式（delay>0）
+        else:
+            # 保存原始配置
+            original_targets = self.config.get("target_groups", []).copy()
+            umo = event.unified_msg_origin
+            temp_registered = False
+
+            try:
+                # 临时注册
+                if umo not in original_targets:
+                    self.config["target_groups"].append(umo)
+                    temp_registered = True
+                    yield event.plain_result("✅ 临时注册当前会话")
+                else:
+                    yield event.plain_result("ℹ️ 当前会话已注册")
+
+                # 等待
+                now = datetime.datetime.now()
+                target_time = now + datetime.timedelta(seconds=delay)
+                yield event.plain_result(f"⏰ 将在 {delay} 秒后执行推送")
+                yield event.plain_result(f"📅 目标时间: {target_time.strftime('%H:%M:%S')}")
+
+                await asyncio.sleep(delay)
+                yield event.plain_result(f"⏱️ 时间到！开始执行...")
+
+                # 步骤 1: 生成
+                yield event.plain_result("🎨 步骤 1/2: 生成单词卡片...")
+                try:
+                    await self._generate_daily_card()
+                    if self._cached_image_path:
+                        word_text = self._current_word.get('word', '?') if self._current_word else '?'
+                        yield event.plain_result(f"✅ 卡片生成成功: {word_text}")
+                    else:
+                        yield event.plain_result("❌ 卡片生成失败：缓存路径为空")
+                        return
+                except Exception as e:
+                    error_detail = traceback.format_exc()
+                    logger.error(f"生成失败:\n{error_detail}")
+                    yield event.plain_result(f"❌ 生成失败: {e}\n\n详细:\n{error_detail[:500]}")
+                    return
+
+                # 步骤 2: 推送
+                yield event.plain_result("📤 步骤 2/2: 推送到已注册群...")
+                try:
+                    targets = self.config.get("target_groups", [])
+                    yield event.plain_result(f"📋 推送目标: {len(targets)} 个会话")
+
+                    await self._push_daily_card()
+                    yield event.plain_result("✅ 推送完成")
+                except Exception as e:
+                    error_detail = traceback.format_exc()
+                    logger.error(f"推送失败:\n{error_detail}")
+                    yield event.plain_result(f"❌ 推送失败: {e}\n\n详细:\n{error_detail[:500]}")
+
+            finally:
+                # 恢复配置
+                if temp_registered:
+                    self.config["target_groups"] = original_targets
+                    self.config.save_config()
+                    yield event.plain_result("🔄 已恢复原始注册列表")
 
     @filter.command("vocab_preview")
     async def cmd_preview(self, event: AstrMessageEvent, word_input: str = ""):
