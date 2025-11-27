@@ -23,7 +23,7 @@
       position: relative;
       width: 100%;
       height: 100%;
-      border-radius: 32px;
+      border-radius: 0;
       overflow: hidden;
       box-shadow: 0 20px 50px rgba(0,0,0,0.5);
     }
@@ -42,7 +42,7 @@
       position: absolute;
       inset: 0;
       background-color: {{theme_color}};
-      opacity: 0.4;
+      opacity: 0.25;
       mix-blend-mode: multiply;
     }
 
@@ -51,26 +51,26 @@
       position: absolute;
       inset: 0;
       background: linear-gradient(to top,
-        rgba(0,0,0,0.85) 0%,
-        rgba(0,0,0,0.4) 40%,
-        rgba(0,0,0,0.1) 70%,
+        rgba(0,0,0,0.65) 0%,
+        rgba(0,0,0,0.25) 40%,
+        rgba(0,0,0,0.05) 70%,
         transparent 100%);
     }
 
-    /* 4. 毛玻璃纹理 */
-    .glass-layer {
+    /* 4. 毛玻璃纹理 - 已移除，仅在例句气泡使用 */
+    /* .glass-layer {
       position: absolute;
       inset: 0;
       backdrop-filter: blur(2px);
       -webkit-backdrop-filter: blur(2px);
       opacity: 0.3;
-    }
+    } */
 
     /* 边框光环 */
     .border-ring {
       position: absolute;
       inset: 0;
-      border-radius: 32px;
+      border-radius: 0;
       border: 1px solid rgba(255,255,255,0.2);
       box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
       pointer-events: none;
@@ -140,25 +140,48 @@
       text-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
-    /* 例句容器 - 强毛玻璃效果 */
+    /* 例句容器 - 渐变磨砂玻璃效果 */
     .example-box {
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-left: 2px solid rgba(255,255,255,0.25);
+      position: relative;
+      border-left: 2px solid rgba(255,255,255,0.3);
       border-radius: 12px;
       padding: 16px 18px;
       margin-bottom: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+
+    /* 底层：磨砂玻璃背景 */
+    .example-box::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      z-index: 1;
+    }
+
+    /* 顶层：渐变遮罩（从下到上逐渐透明） */
+    .example-box::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top,
+        rgba(255,255,255,0.08) 0%,
+        rgba(255,255,255,0.03) 50%,
+        transparent 100%);
+      z-index: 2;
     }
 
     .example {
+      position: relative;
+      z-index: 3;
       font-family: Georgia, 'Noto Serif SC', serif;
       font-size: 14px;
       font-style: italic;
       line-height: 1.6;
-      opacity: 0.9;
-      color: rgba(255,255,255,0.95);
+      color: rgba(255,255,255,0.98);
     }
 
     /* 底部标签区 */
@@ -198,7 +221,7 @@
     <div class="bg-layer"></div>
     <div class="tint-layer"></div>
     <div class="gradient-layer"></div>
-    <div class="glass-layer"></div>
+    <!-- glass-layer 已移除，仅在例句气泡使用磨砂效果 -->
     <div class="border-ring"></div>
 
     <!-- 内容区 -->

@@ -345,11 +345,11 @@ class VocabCardPlugin(Star):
                 # 启动浏览器
                 browser = await p.chromium.launch(headless=True)
 
-                # 创建超高清页面 - device_scale_factor=3 实现 3x 清晰度
-                # 输出分辨率：1296x1620 (432x3, 540x3)
+                # 创建超高清页面 - device_scale_factor=4 实现 4x 清晰度
+                # 输出分辨率：1728x2160 (432x4, 540x4) - 4K级别
                 page = await browser.new_page(
                     viewport={'width': 432, 'height': 540},
-                    device_scale_factor=3  # 3倍清晰度，比2倍更清晰
+                    device_scale_factor=4  # 4倍清晰度，达到4K级别
                 )
 
                 # 加载页面
