@@ -37,6 +37,13 @@ THEME_COLORS = [
 ]
 
 
+def get_beijing_time() -> datetime.datetime:
+    """获取北京时间（东八区）- 兼容 Docker 容器 UTC 时间"""
+    utc_now = datetime.datetime.utcnow()
+    beijing_offset = datetime.timedelta(hours=8)
+    return utc_now + beijing_offset
+
+
 @register("vocabcard", "Assistant", "每日英语单词卡片推送插件 - 玻璃拟态风格", "1.0.0")
 class VocabCardPlugin(Star):
     def __init__(self, context: Context, config: AstrBotConfig):
@@ -147,7 +154,7 @@ class VocabCardPlugin(Star):
         """定时任务主循环 - 智能睡眠，精准触发"""
         while True:
             try:
-                now = datetime.datetime.now()
+                now = get_beijing_time()
                 today_str = now.strftime("%Y-%m-%d")
 
                 # 解析配置的时间
@@ -178,7 +185,7 @@ class VocabCardPlugin(Star):
                         await asyncio.sleep(sleep_seconds)
 
                 # 重新获取当前时间（睡眠后）
-                now = datetime.datetime.now()
+                now = get_beijing_time()
 
                 # 执行生成任务
                 if now.hour == gen_time[0] and now.minute == gen_time[1]:
@@ -266,7 +273,7 @@ class VocabCardPlugin(Star):
         """标记单词已推送"""
         if word not in self.progress["sent_words"]:
             self.progress["sent_words"].append(word)
-        self.progress["last_push_date"] = datetime.datetime.now().strftime("%Y-%m-%d")
+        self.progress["last_push_date"] = get_beijing_time().strftime("%Y-%m-%d")
         self._save_progress()
 
     def _generate_bg_prompt(self, word: Dict) -> str:
@@ -585,7 +592,7 @@ class VocabCardPlugin(Star):
                     yield event.plain_result("ℹ️ 当前会话已注册")
 
                 # 等待
-                now = datetime.datetime.now()
+                now = get_beijing_time()
                 target_time = now + datetime.timedelta(seconds=delay)
                 yield event.plain_result(f"⏰ 将在 {delay} 秒后执行推送")
                 yield event.plain_result(f"📅 目标时间: {target_time.strftime('%H:%M:%S')}")
