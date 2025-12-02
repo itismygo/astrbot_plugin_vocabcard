@@ -48,5 +48,11 @@
     "type": "bool",
     "hint": "所有单词推送完毕后自动从头开始",
     "default": true
+  },
+  "use_cdn_background": {
+    "description": "使用CDN背景图",
+    "type": "bool",
+    "hint": "使用 jsDelivr CDN 加载背景图片，关闭则使用本地图片",
+    "default": true
   }
 }

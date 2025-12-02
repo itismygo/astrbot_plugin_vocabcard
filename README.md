@@ -12,7 +12,7 @@
 ## ✨ 特性
 
 - 🎨 **玻璃拟态设计**：精美的毛玻璃风格卡片，视觉效果出众
-- 🖼️ **本地背景图库**：内置 37 张精选背景图，随机裁剪增加多样性
+- 🖼️ **CDN 背景图库**：37 张精选背景图托管于阿里云 OSS，加载快速
 - 📅 **定时推送**：每天自动生成并推送单词卡片到群聊
 - 📖 **丰富词库**：包含 3722+ 个 CET-6 核心词汇
 - 🎲 **随机学习**：支持随机或顺序学习模式
@@ -28,7 +28,7 @@
 - 词性标签（高亮显示）
 - 中文释义
 - 英文例句（斜体，毛玻璃背景）
-- 随机背景图（37 张图库随机裁剪）
+- 随机背景图（37 张 CDN 图库随机选择）
 - 随机主题色（10 种配色）
 
 卡片分辨率：**1296 × 1620 像素**（超高清 3x 清晰度）
@@ -120,7 +120,7 @@ playwright install chromium
   "push_time_send": "08:00",        // 卡片推送时间
   "learning_mode": "random",        // 学习模式：random(随机) / sequential(顺序)
   "reset_on_complete": true,        // 学完所有单词后是否自动重置
-  "enable_ai_background": false     // 是否启用 AI 生成背景（当前使用本地图库）
+  "use_cdn_background": true        // 是否使用 CDN 背景图（关闭则使用本地图片）
 }
 ```
 
@@ -153,9 +153,8 @@ astrbot_plugin_vocabcard/
 │   └── progress.json      # 学习进度记录
 ├── templates/
 │   └── card.html          # 卡片 HTML 模板
-├── photos/                # 背景图库（37 张）
-│   ├── *.jpg
-│   └── ...
+├── photos/                # 本地备用背景图（5 张，CDN 不可用时使用）
+│   └── *.jpg
 └── scripts/
     ├── clean_data.py      # 数据清洗脚本
     └── download_backgrounds.py  # 背景图下载脚本
@@ -176,7 +175,7 @@ astrbot_plugin_vocabcard/
 ### 随机性设计
 
 每张卡片包含三重随机性：
-- 📷 随机背景图（37 张图库）
+- 📷 随机背景图（37 张 CDN 图库）
 - 🎨 随机主题色（10 种配色）
 - ✂️ 随机裁剪位置（0-100% X/Y）
 
@@ -214,18 +213,21 @@ astrbot_plugin_vocabcard/
 
 ### 添加背景图
 
-将图片（jpg/png/webp）放入 `photos/` 文件夹即可，支持任意尺寸（自动裁剪）。
+背景图托管于阿里云 OSS，如需添加更多背景图：
 
-### AI 背景生成（可选）
+1. 将图片上传到 OSS 的 `photos/` 目录
+2. 在 `main.py` 的 `CDN_BACKGROUNDS` 列表中添加对应 URL
 
-如需启用 AI 生成背景：
+本地 `photos/` 文件夹中的图片仅作为 CDN 不可用时的备用。
 
-1. 修改 `main.py` 第 82 行：
-   ```python
-   use_ai = True  # 启用 AI 生图
-   ```
+### 关闭 CDN 使用本地图片
 
-2. 将使用 Pollinations.ai 根据单词动态生成背景图
+如需关闭 CDN，在插件配置中设置：
+```json
+{
+  "use_cdn_background": false
+}
+```
 
 ## 📝 技术栈
 
