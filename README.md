@@ -4,7 +4,7 @@
 
 📚 每日英语单词卡片推送插件 - 玻璃拟态风格
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg)](LICENSE)
 [![AstrBot](https://img.shields.io/badge/AstrBot-Plugin-orange.svg)](https://github.com/Soulter/AstrBot)
 
 </div>
@@ -260,7 +260,7 @@ A: 可以编辑 `templates/card.html` 自定义 CSS 样式。
 
 ## 📄 许可证
 
-MIT License
+AGPL-3.0 License
 
 ## 🙏 致谢
 
