@@ -17,7 +17,6 @@ import json
 import os
 import random
 import traceback
-import urllib.parse
 from pathlib import Path
 from typing import Optional, Dict, List
 
@@ -124,23 +123,7 @@ class VocabCardPlugin(Star):
         logger.info(f"已加载 {len(backgrounds)} 张离线背景图")
         return backgrounds
 
-    def _get_background_url(self, word: Dict) -> str:
-        """获取背景图 URL（优先 AI 生成，失败则用离线图）"""
-        # 临时禁用 AI 生图，直接使用本地图片
-        # 如需恢复 AI 生图，将下面这行改为 True
-        use_ai = False  # self.config.get("enable_ai_background", True)
-
-        if use_ai:
-            # === AI 生图代码（已注释，保留以便后续恢复）===
-            # 使用 Pollinations.ai 动态生成 - 提高分辨率
-            bg_prompt = self._generate_bg_prompt(word)
-            # 使用更高分辨率：1920x2400（原来是1080x1350）
-            return f"https://image.pollinations.ai/prompt/{bg_prompt}?width=1920&height=2400&nologo=true&model=flux&enhance=true"
-        else:
-            # 使用离线背景图（当前启用）
-            return self._get_offline_background_url()
-
-    def _get_offline_background_url(self) -> str:
+    def _get_background_url(self) -> str:
         """获取背景图 URL（优先 CDN，失败则用本地图片）"""
         # 优先使用 CDN 图片
         use_cdn = self.config.get("use_cdn_background", True)
@@ -322,33 +305,13 @@ class VocabCardPlugin(Star):
         self.progress["last_push_date"] = get_beijing_time().strftime("%Y-%m-%d")
         self._save_progress()
 
-    def _generate_bg_prompt(self, word: Dict) -> str:
-        """根据单词生成背景图提示词"""
-        word_text = word["word"]
-        meaning = word.get("definition_cn", "")
-        pos = word.get("pos", "").lower()
-
-        # 基于词性选择主题风格
-        if "adj" in pos:
-            theme = "abstract gradient aesthetic atmosphere"
-        elif "n." in pos:
-            theme = "realistic minimalist photography"
-        elif "v." in pos:
-            theme = "dynamic motion artistic blur"
-        else:
-            theme = "aesthetic minimalist background"
-
-        # 构建提示词
-        prompt = f"{word_text} concept, {theme}, high quality, 4k, no text, cinematic lighting"
-        return urllib.parse.quote(prompt)
-
     def _render_template(self, word: Dict) -> str:
         """渲染 HTML 模板"""
         with open(self.template_path, 'r', encoding='utf-8') as f:
             template = f.read()
 
         # 获取背景图 URL
-        bg_url = self._get_background_url(word)
+        bg_url = self._get_background_url()
 
         # 选择主题色
         theme_color = random.choice(THEME_COLORS)

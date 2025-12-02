@@ -268,7 +268,7 @@ AGPL-3.0 License
 
 - 背景图片来源：[Unsplash](https://unsplash.com)
 - 字体：Google Fonts (Noto Sans/Serif SC)
-- AI 生图服务：[Pollinations.ai](https://pollinations.ai)
+- 图床服务：阿里云 OSS
 
 ## 📮 反馈与建议
 
