@@ -477,6 +477,8 @@ class VocabCardPlugin(Star):
         # 静默生成，不发送提示
         try:
             image_path = await self._generate_card_image(word)
+            # 标记单词已学习并保存进度
+            self._mark_word_sent(word["word"])
             yield event.image_result(image_path)
 
             # 清理图片
