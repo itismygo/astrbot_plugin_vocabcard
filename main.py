@@ -312,10 +312,12 @@ class VocabCardPlugin(Star):
     def _calculate_next_target_time(self, now: datetime.datetime, gen_time: tuple, push_time: tuple) -> Optional[datetime.datetime]:
         """计算下一个目标时间点（生成时间或推送时间中最近的一个）"""
         today = now.date()
+        # 获取时区信息（与 now 保持一致）
+        tz = now.tzinfo
 
-        # 构建今天的生成时间和推送时间
-        gen_datetime = datetime.datetime.combine(today, datetime.time(gen_time[0], gen_time[1]))
-        push_datetime = datetime.datetime.combine(today, datetime.time(push_time[0], push_time[1]))
+        # 构建今天的生成时间和推送时间（带时区）
+        gen_datetime = datetime.datetime.combine(today, datetime.time(gen_time[0], gen_time[1]), tzinfo=tz)
+        push_datetime = datetime.datetime.combine(today, datetime.time(push_time[0], push_time[1]), tzinfo=tz)
 
         # 找出所有未来的目标时间
         targets = []
@@ -331,7 +333,7 @@ class VocabCardPlugin(Star):
         # 如果今天的任务都完成了，计算明天的第一个任务（生成时间）
         if not targets:
             tomorrow = today + datetime.timedelta(days=1)
-            next_gen = datetime.datetime.combine(tomorrow, datetime.time(gen_time[0], gen_time[1]))
+            next_gen = datetime.datetime.combine(tomorrow, datetime.time(gen_time[0], gen_time[1]), tzinfo=tz)
             targets.append(next_gen)
 
         # 返回最近的目标时间
