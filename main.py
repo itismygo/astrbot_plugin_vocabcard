@@ -135,7 +135,8 @@ class VocabCardPlugin(Star):
         self.offline_backgrounds: List[Path] = self._load_offline_backgrounds()
 
         # 定时任务相关
-        self._scheduler_task: Optional[asyncio.Task] = None
+        self._scheduler_task: Optional[asyncio.Task] = asyncio.create_task(self._schedule_loop())
+        logger.info("单词卡片定时任务已启动")
         self._cached_image_path: Optional[str] = None
         self._current_word: Optional[WordEntry] = None
         self._today_generated: bool = False
@@ -235,13 +236,29 @@ class VocabCardPlugin(Star):
 
     async def initialize(self):
         """异步初始化"""
-        logger.info(f"单词卡片插件初始化完成 [语种: {self.current_language}]，已加载 {len(self.words)} 个单词")
+        # 确保必要的目录存在
+        directories_to_create = [
+            self.data_dir,           # 数据目录
+            self.backgrounds_dir,    # 背景图片目录
+        ]
 
-    @filter.on_astrbot_loaded()
-    async def on_loaded(self):
-        """AstrBot 启动后启动定时任务"""
-        self._scheduler_task = asyncio.create_task(self._schedule_loop())
-        logger.info("单词卡片定时任务已启动")
+        for directory in directories_to_create:
+            logger.debug(f"确保目录存在: {directory}")
+            directory.mkdir(parents=True, exist_ok=True)
+
+        # 确保进度文件存在
+        progress_file = self.data_dir / f"progress_{self.current_language}.json"
+        if not progress_file.exists():
+            default_progress = {"sent_words": [], "last_push_date": ""}
+            async with self._progress_lock:
+                try:
+                    with open(progress_file, 'w', encoding='utf-8') as f:
+                        json.dump(default_progress, f, ensure_ascii=False, indent=2)
+                    logger.info(f"已创建进度文件: {progress_file}")
+                except Exception as e:
+                    logger.error(f"创建进度文件失败: {e}")
+
+        logger.info(f"单词卡片插件初始化完成 [语种: {self.current_language}]，已加载 {len(self.words)} 个单词")
 
     async def _schedule_loop(self):
         """定时任务主循环 - 智能睡眠，精准触发"""
